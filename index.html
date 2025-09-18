@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400&display=swap" rel="stylesheet">
+
+    <meta charset="UTF-8">
+    <title>Reader</title>
+    <style>
+        body {
+            background-color: #1c1c1c;
+            font-family: "Open Sans", sans-serif;
+            font-weight: 400;
+            font-size: 24px;
+            line-height: 1.583;
+            letter-spacing: 0.32px;
+            text-align: justify;
+            display: flex;
+            justify-content: center;
+            font-variation-settings: "wght" 400, "wdth" 100;
+
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+
+        .reader {
+            max-width: 747px;
+            padding: 40px;
+            color: #cfcfcf;
+            background-color: #000;
+            padding-left: 125px;
+            padding-right: 125px;
+            min-height: calc(100vh - 35px - 50px);
+        }
+
+        .reader span:hover {
+            color: #000;
+            background-color: #cecece;
+            cursor: pointer;
+        }
+
+        .topbar {
+            position: fixed;
+            inset: 0 0 auto 0;
+            height: 35px;
+            background: #000;
+            display: grid;
+            place-items: center;
+            border-bottom: 1px solid #1f1f1f;
+            z-index: 10;
+        }
+
+        .topbar__title {
+            font-family: "Open Sans", sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: #000;
+            /* tom escuro parecido */
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            color: #ccc;
+            font-size: 16px;
+            border-top: 1px solid #333;
+            z-index: 10;
+        }
+
+        .footer .progress {
+            font-size: 14px;
+        }
+
+        .footer .nav-btn {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 26px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .footer .nav-btn:hover {
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="topbar__title">A Sea of Darkness</div>
+    </header>
+
+    <div class="reader">
+        <span>I am a lawyer at an engineering company</span>, so I had to pay close attention to every little detail on
+        all those
+        papers. I also had to draft a very important contract that could improve our company's future, which filled me
+        with anxiety. This document could leave no room for interpretation, so writing it was not an easy task. Every
+        word needed to be chosen carefully. If I made a mistake, even a small one, the consequences could be terrible.
+
+        I do not think anyone had lunch that day, just a huge number of cups of coffee. Eventually, people started
+        ordering food. I looked at the clock on the wall: it was past 9 pm, so I ate a salad and some garlic bread at my
+        desk, which helped me to keep going. Everyone was tired, but we pressed on regardless.
+    </div>
+    <div class="footer">
+        <button class="nav-btn">❮</button>
+        <span class="progress">0%</span>
+        <button class="nav-btn">❯</button>
+    </div>
+</body>
+
+</html>
