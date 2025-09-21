@@ -207,7 +207,7 @@
             const progress = document.querySelector(".progress");
             const [prevBtn, nextBtn] = document.querySelectorAll(".nav-btn");
 
-            function render() {
+            const render = () => {
                 reader.textContent = pages[page];
                 progress.textContent = `${Math.round(((page + 1) / pages.length) * 100)}%`;
                 prevBtn.disabled = page === 0;
