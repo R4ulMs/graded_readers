@@ -116,7 +116,7 @@
             return text.replace(/\s+/g, " ").trim();
         };
 
-        let book = [`<span>I am a lawyer at an engineering company</span>, so I had to pay close attention to every little detail on
+        const book = `<span>I am a lawyer at an engineering company</span>, so I had to pay close attention to every little detail on
   all those papers. I also had to draft a very important contract that could improve our company's future, which filled me
   with anxiety. This document could leave no room for interpretation, so writing it was not an easy task. Every
   word needed to be chosen carefully. If I made a mistake, even a small one, the consequences could be terrible.
@@ -130,9 +130,8 @@
   aaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaa
   aaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaa
   aaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaa
-  aaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa eee`];
+  aaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa eee`;
 
-        // ======= helpers de medição/binária (iguais aos que você já tinha) =======
         const escapeHtml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
         const syncMeasurerStyle = (readerEl, measurerEl) => {
@@ -199,7 +198,7 @@
         }
 
         window.addEventListener("DOMContentLoaded", () => {
-            const txt = strip(book[0]);
+            const txt = strip(book);
             const pages = paginate(txt);
 
             let page = 0;
