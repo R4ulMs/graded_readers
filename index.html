@@ -20,13 +20,17 @@
         }
 
         .reader {
-            max-width: 747px;
+            max-width: 994px;
+            min-width: 994px;
             padding: 40px;
             color: #cfcfcf;
             background-color: #000;
             padding-left: 125px;
             padding-right: 125px;
-            min-height: calc(100vh - 35px - 50px);
+        
+            box-sizing: border-box; 
+            height: 640px; 
+            overflow: hidden;
         }
 
         .reader span:hover {
@@ -92,7 +96,7 @@
             visibility: hidden;
             left: -9999px;
             top: -9999px;
-            width: 747px;
+            width: 994px;
             /* will update dynamically to match reader's content width */
             padding: 40px 125px;
             box-sizing: border-box;
@@ -121,12 +125,69 @@
         ordering food. I looked at the clock on the wall: it was past 9 pm, so I ate a salad and some garlic bread at my
         desk, which helped me to keep going. Everyone was tired, but we pressed on regardless. aaa aaa aaa aaa aaa aaa aaa aaa aaa 
         aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa bbb aaa aaa aaa aaa aaa aaa aaa aaa 
-        aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa`];
+        aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa 
+        aaa aaa aaa aaa aaa aaa aaa ccc`];
+
+        // ======= ADIÇÕES MÍNIMAS: binária e medição =======
+        const escapeHtml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+        function syncMeasurerStyle(readerEl, measurerEl) {
+            const cs = getComputedStyle(readerEl);
+            measurerEl.style.width = cs.width;
+            measurerEl.style.paddingTop = cs.paddingTop;
+            measurerEl.style.paddingRight = cs.paddingRight;
+            measurerEl.style.paddingBottom = cs.paddingBottom;
+            measurerEl.style.paddingLeft = cs.paddingLeft;
+            measurerEl.style.boxSizing = cs.boxSizing;
+            measurerEl.style.fontFamily = cs.fontFamily;
+            measurerEl.style.fontSize = cs.fontSize;
+            measurerEl.style.lineHeight = cs.lineHeight;
+            measurerEl.style.letterSpacing = cs.letterSpacing;
+            measurerEl.style.textAlign = cs.textAlign;
+            measurerEl.style.whiteSpace = "normal";
+        }
+
+        function fitsInPagePlainText(text, readerEl, measurerEl) {
+            measurerEl.innerHTML = "<p>" + escapeHtml(text) + "</p>";
+            const hM = measurerEl.getBoundingClientRect().height;
+            const hR = readerEl.getBoundingClientRect().height;
+            console.log(hR)
+            return hM <= hR + 0.5;
+        }
+
+        function fitParagraphPrefix(paragraph) {
+            const readerEl = document.querySelector(".reader");
+            const measurerEl = document.getElementById("measurer");
+            syncMeasurerStyle(readerEl, measurerEl);
+
+            let low = 0;
+            let high = paragraph.length;
+            let best = 0;
+
+            // Atalho: se o parágrafo inteiro cabe, retorna comprimento total
+            if (fitsInPagePlainText(paragraph, readerEl, measurerEl)) return paragraph.length;
+
+            while (low <= high) {
+                const mid = Math.floor((low + high) / 2);
+                const candidate = paragraph.slice(0, mid) + "…";
+                if (fitsInPagePlainText(candidate, readerEl, measurerEl)) {
+                    best = mid;
+                    low = mid + 1;   // tenta maior
+                } else {
+                    high = mid - 1;  // tenta menor
+                }
+            }
+            return best; // maior prefixo que coube
+        }
+        // ================================================
 
         window.addEventListener("DOMContentLoaded", () => {
             let txt = strip(book[0]);
 
-            document.querySelector(".reader").innerHTML += txt;
+            const idx = fitParagraphPrefix(txt);
+            console.log("fitParagraphPrefix length =", idx, "preview =", txt.slice(0, idx));
+
+            document.querySelector(".reader").innerHTML += txt.slice(idx);
         });
     </script>
 </head>
