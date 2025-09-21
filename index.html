@@ -17,11 +17,6 @@
             text-align: justify;
             display: flex;
             justify-content: center;
-            font-variation-settings: "wght" 400, "wdth" 100;
-
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            text-rendering: optimizeLegibility;
         }
 
         .reader {
@@ -90,7 +85,50 @@
         .footer .nav-btn:hover {
             color: #fff;
         }
+
+        /* medidor invisível: terá o mesmo estilo que .reader */
+        #measurer {
+            position: absolute;
+            visibility: hidden;
+            left: -9999px;
+            top: -9999px;
+            width: 747px;
+            /* will update dynamically to match reader's content width */
+            padding: 40px 125px;
+            box-sizing: border-box;
+            font-size: 24px;
+            line-height: 1.583;
+            letter-spacing: 0.32px;
+            text-align: justify;
+            white-space: normal;
+        }
     </style>
+    <script>
+        const strip = (html) => {
+            let tmp = document.createElement("div");
+            tmp.innerHTML = html;
+            const text = tmp.textContent || tmp.innerText || "";
+
+            return text.replace(/\s+/g, " ").trim();
+        }
+
+        let book = [`<span>I am a lawyer at an engineering company</span>, so I had to pay close attention to every little detail on
+        all those papers. I also had to draft a very important contract that could improve our company's future, which filled me
+        with anxiety. This document could leave no room for interpretation, so writing it was not an easy task. Every
+        word needed to be chosen carefully. If I made a mistake, even a small one, the consequences could be terrible.
+
+        I do not think anyone had lunch that day, just a huge number of cups of coffee. Eventually, people started
+        ordering food. I looked at the clock on the wall: it was past 9 pm, so I ate a salad and some garlic bread at my
+        desk, which helped me to keep going. Everyone was tired, but we pressed on regardless. aaa aaa aaa aaa aaa aaa aaa aaa aaa 
+        aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa bbb aaa aaa aaa aaa aaa aaa aaa aaa 
+        aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa`];
+
+        window.addEventListener("DOMContentLoaded", () => {
+            let txt = strip(book[0]);
+
+            document.querySelector(".reader").innerHTML += txt;
+        });
+    </script>
 </head>
 
 <body>
@@ -98,22 +136,15 @@
         <div class="topbar title">A Sea of Darkness</div>
     </header>
 
-    <div class="reader">
-        <span>I am a lawyer at an engineering company</span>, so I had to pay close attention to every little detail on
-        all those
-        papers. I also had to draft a very important contract that could improve our company's future, which filled me
-        with anxiety. This document could leave no room for interpretation, so writing it was not an easy task. Every
-        word needed to be chosen carefully. If I made a mistake, even a small one, the consequences could be terrible.
-
-        I do not think anyone had lunch that day, just a huge number of cups of coffee. Eventually, people started
-        ordering food. I looked at the clock on the wall: it was past 9 pm, so I ate a salad and some garlic bread at my
-        desk, which helped me to keep going. Everyone was tired, but we pressed on regardless.
-    </div>
+    <div class="reader"></div>
     <div class="footer">
         <button class="nav-btn">❮</button>
         <span class="progress">0%</span>
         <button class="nav-btn">❯</button>
     </div>
+
+    <!-- medidor invisível -->
+    <div id="measurer" aria-hidden="true"></div>
 </body>
 
 </html>
