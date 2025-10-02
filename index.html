@@ -3,12 +3,13 @@
 
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400&display=swap" rel="stylesheet">
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Reader</title>
     <style>
         :root {
             --topbar-h: 28px;
             --footer-h: 25px;
+            --tip-safe: clamp(64px, 10vh, 128px);
         }
 
         body {
@@ -17,8 +18,8 @@
             font-weight: 400;
             font-size: 24px;
             line-height: 1.583;
-            letter-spacing: 0.32px;
-            text-align: justify;
+            letter-spacing: .32px;
+            text-align: left;
             display: flex;
             justify-content: center;
         }
@@ -28,7 +29,7 @@
             min-width: 994px;
             padding: 40px;
             color: #cfcfcf;
-            background-color: #000;
+            background: #000;
             padding-left: 125px;
             padding-right: 125px;
             box-sizing: border-box;
@@ -94,6 +95,7 @@
             color: #fff;
         }
 
+        /* medidor invisível */
         #measurer {
             position: absolute;
             visibility: hidden;
@@ -104,30 +106,67 @@
             box-sizing: border-box;
             font-size: 24px;
             line-height: 1.583;
-            letter-spacing: 0.32px;
-            text-align: justify;
+            letter-spacing: .32px;
             white-space: normal;
         }
 
-        /* Tooltip flutuante simples */
-        .tooltip-float {
-            position: fixed;
-            display: none;
-            z-index: 1000;
-            background: #181818;
-            color: #e6e6e6;
-            border: 1px solid #333;
-            border-radius: 3px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
-            min-width: 220px;
-            max-width: 360px;
-            padding: 10px 12px;
-            font-size: 18px;
-            line-height: 1.35;
+        /* ===== Tooltip estilo de referência (com setinha) ===== */
+        .tip-wrap {
+            position: relative;
+            display: inline-block;
         }
 
-        .tooltip-float.show {
-            display: block;
+        .tip-trigger {
+            cursor: pointer;
+        }
+
+        .tooltip {
+            position: absolute;
+            left: 0;
+            top: 100%;
+            transform: translateY(8px);
+            width: 280px;
+            max-width: 400px;
+            padding: 8px 10px;
+            border: 2px solid #ccc;
+            background: #141414;
+            color: #fff;
+            font-size: 14px;
+            line-height: 1.3;
+            white-space: normal;
+            overflow-wrap: break-word;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .12s ease;
+            z-index: 12;
+        }
+
+        .tooltip::before,
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            left: 14px;
+            width: 0;
+            height: 0;
+            border: solid transparent;
+            pointer-events: none;
+        }
+
+        .tooltip::before {
+            border-width: 8px;
+            border-bottom-color: #ccc;
+            margin-left: -2px;
+        }
+
+        .tooltip::after {
+            border-width: 6px;
+            border-bottom-color: #141414;
+        }
+
+        .tip-wrap[data-open="true"] .tooltip {
+            opacity: 1;
+            pointer-events: auto;
         }
     </style>
 </head>
@@ -148,11 +187,10 @@
     <!-- medidor invisível -->
     <div id="measurer" aria-hidden="true"></div>
 
-    <!-- tooltip flutuante -->
-    <div id="tooltip" class="tooltip-float" role="tooltip"></div>
-
     <script>
-        // ===== 1) SEU CONTEÚDO AGORA EM JSON (frases + tooltip) =====
+        const TIP_SAFE = Math.max(64, Math.min(window.innerHeight * 0.10, 128));
+
+        // ===== conteúdo em JSON (frases + tooltip) =====
         const story = {
             "page1": [
                 { "phrase": "Maria acordou cedo", "tooltip": "Início do dia" },
@@ -204,11 +242,6 @@
         };
 
         const escapeHtml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        const strip = (html) => {
-            const d = document.createElement('div');
-            d.innerHTML = html;
-            return (d.textContent || d.innerText || '').replace(/\s+/g, ' ').trim();
-        };
 
         const syncMeasurerStyle = (readerEl, measurerEl) => {
             const cs = getComputedStyle(readerEl);
@@ -224,32 +257,30 @@
             measurerEl.style.letterSpacing = cs.letterSpacing;
             measurerEl.style.textAlign = cs.textAlign;
             measurerEl.style.whiteSpace = "normal";
-        }
+        };
 
-        const isFitPage = (text, readerEl, measurerEl) => {
+        function isFitPage(text, readerEl, measurerEl, safePx = TIP_SAFE) {
             measurerEl.innerHTML = "<p>" + escapeHtml(text) + "</p>";
             const hM = measurerEl.getBoundingClientRect().height;
-            const hR = readerEl.getBoundingClientRect().height;
-            return hM <= hR + 0.5;
+            const readerH = readerEl.getBoundingClientRect().height;
+            const available = readerH - safePx;           // <- aqui está o “height - N”
+            return hM <= available + 0.5;
         }
 
-        const fitPage = (paragraph) => {
+        function fitPage(paragraph, safePx = TIP_SAFE) {
             const readerEl = document.querySelector(".reader");
             const measurerEl = document.getElementById("measurer");
             syncMeasurerStyle(readerEl, measurerEl);
 
-            let low = 0;
-            let high = paragraph.length;
-            let best = 0;
+            let low = 0, high = paragraph.length, best = 0;
 
-            if (isFitPage(paragraph, readerEl, measurerEl)) return paragraph.length;
+            if (isFitPage(paragraph, readerEl, measurerEl, safePx)) return paragraph.length;
 
             while (low <= high) {
                 const mid = Math.floor((low + high) / 2);
                 const candidate = paragraph.slice(0, mid) + "…";
-                if (isFitPage(candidate, readerEl, measurerEl)) {
-                    best = mid;
-                    low = mid + 1;
+                if (isFitPage(candidate, readerEl, measurerEl, safePx)) {
+                    best = mid; low = mid + 1;
                 } else {
                     high = mid - 1;
                 }
@@ -258,95 +289,101 @@
         }
 
         function buildFullTextWithIndex(items) {
-            let fullText = "";
-            const index = []
-            let pos = 0;
-
+            let fullText = "", index = [], pos = 0;
             items.forEach((it, i) => {
-                if (i > 0) {
-                    fullText += " "; pos += 1;
-                }
-
+                if (i > 0) { fullText += " "; pos += 1; }
                 const start = pos;
                 fullText += it.phrase;
                 const end = pos + it.phrase.length;
                 index.push({ start, end, tooltip: it.tooltip });
                 pos = end;
             });
-
             return { fullText, index };
         }
 
         function paginateRanges(fullText) {
-            const pages = [];
-            let rest = fullText;
-            let offset = 0;
-
+            const pages = []; let rest = fullText; let offset = 0;
             while (rest.length > 0) {
                 const take = fitPage(rest);
-                const len = take > 0 ? take : Math.min(100, rest.length); // fallback
+                const len = take > 0 ? take : Math.min(100, rest.length);
                 pages.push({ start: offset, end: offset + len });
-                rest = rest.slice(len);
-                offset += len;
+                rest = rest.slice(len); offset += len;
             }
-
             return pages;
         }
 
-        // ===== 4) Constrói HTML de uma página, marcando frases que cruzam o range =====
+        // Constrói o HTML da página com o tooltip de referência
         function buildPageHtml(fullText, phraseIndex, range) {
-            // pegue todas as frases que intersectam [range.start, range.end)
             const overlaps = phraseIndex
                 .filter(({ start, end }) => end > range.start && start < range.end)
                 .sort((a, b) => a.start - b.start);
 
-            let html = "";
-            let cursor = range.start;
-
+            let html = "", cursor = range.start;
             const pushRaw = (from, to) => {
-                if (to > from) html += escapeHtml(fullText.slice(from, to));
+                if (to > from)
+                    html += escapeHtml(fullText.slice(from, to));
             };
 
             overlaps.forEach(({ start, end, tooltip }) => {
                 const s = Math.max(start, range.start);
                 const e = Math.min(end, range.end);
 
-                // 1) texto cru antes da frase
                 pushRaw(cursor, s);
 
-                // 2) trecho da frase (pode ser parcial se cortada na página)
-                const frag = fullText.slice(s, e);
-                html += `<span class="phrase" data-tip="${escapeHtml(tooltip)}">${escapeHtml(frag)}</span>`;
+                const frag = escapeHtml(fullText.slice(s, e));
+                const tip = escapeHtml(tooltip || "");
+
+                html += `
+                <span class="tip-wrap">
+                    <span class="tip-trigger phrase">${frag}</span>
+                    <span class="tooltip" role="tooltip">${tip}</span>
+                </span>`;
+
                 cursor = e;
             });
 
-            // 3) cauda depois da última frase
             pushRaw(cursor, range.end);
 
             return html;
         }
 
-        const tipEl = document.getElementById('tooltip');
-        function showTooltip(target, text) {
-            tipEl.textContent = text;
-            const r = target.getBoundingClientRect();
-            const pad = 6;
-            const top = r.bottom + window.scrollY + pad;
-            let left = r.left + window.scrollX;
+        // Controle global dos tooltips (igual ao exemplo de referência)
+        function installTooltipController() {
+            const closeAll = () => {
+                document.querySelectorAll('.tip-wrap[data-open="true"]').forEach(w => {
+                    w.setAttribute('data-open', 'false');
+                    const t = w.querySelector('.tip-trigger');
+                    if (t) t.setAttribute('aria-expanded', 'false');
+                });
+            };
 
-            tipEl.style.display = 'block'; 
-            const maxLeft = window.scrollX + document.documentElement.clientWidth - tipEl.offsetWidth - 8;
-            if (left > maxLeft) left = maxLeft;
+            document.addEventListener('click', (ev) => {
+                const trigger = ev.target.closest('.tip-trigger');
+                const anyWrap = ev.target.closest('.tip-wrap');
 
-            tipEl.style.top = `${top}px`;
-            tipEl.style.left = `${left}px`;
-            tipEl.classList.add('show');
+                if (trigger && anyWrap) {
+                    ev.stopPropagation();
+                    const isOpen = anyWrap.getAttribute('data-open') === 'true';
+
+                    closeAll();
+
+                    anyWrap.setAttribute('data-open', String(!isOpen));
+                    trigger.setAttribute('aria-expanded', String(!isOpen));
+
+                    return;
+                }
+                if (!anyWrap) closeAll();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.tip-wrap[data-open="true"]').forEach(w => w.setAttribute('data-open', 'false'));
+                }
+            });
         }
-        
-        function hideTooltip() { tipEl.classList.remove('show'); tipEl.style.display = 'none'; }
 
         window.addEventListener("DOMContentLoaded", () => {
-            const items = story.page1;                          // <- usa o JSON
+            const items = story.page1;
             const { fullText, index: phraseIndex } = buildFullTextWithIndex(items);
             const pages = paginateRanges(fullText);
 
@@ -355,33 +392,21 @@
             const progress = document.querySelector(".progress");
             const [prevBtn, nextBtn] = document.querySelectorAll(".nav-btn");
 
-            function render() {
+            const render = () => {
                 const range = pages[page];
                 reader.innerHTML = buildPageHtml(fullText, phraseIndex, range);
-
                 progress.textContent = `${Math.round(((page + 1) / pages.length) * 100)}%`;
                 prevBtn.disabled = page === 0;
                 nextBtn.disabled = page === pages.length - 1;
 
-                reader.querySelectorAll('.phrase').forEach(el => {
-                    el.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const tip = el.getAttribute('data-tip');
-                        showTooltip(el, tip || "");
-                    });
-                });
-            }
+                // fecha tooltips abertos ao trocar de página
+                document.querySelectorAll('.tip-wrap[data-open="true"]').forEach(w => w.setAttribute('data-open', 'false'));
+            };
 
+            prevBtn.addEventListener("click", () => { if (page > 0) { page--; render(); } });
+            nextBtn.addEventListener("click", () => { if (page < pages.length - 1) { page++; render(); } });
 
-            prevBtn.addEventListener("click", () => { if (page > 0) { page--; hideTooltip(); render(); } });
-            nextBtn.addEventListener("click", () => { if (page < pages.length - 1) { page++; hideTooltip(); render(); } });
-
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.phrase')) hideTooltip();
-            });
-
-            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTooltip(); });
-
+            installTooltipController();
             render();
         });
     </script>
