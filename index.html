@@ -3,7 +3,6 @@
 
 <head>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400&display=swap" rel="stylesheet">
-
     <meta charset="UTF-8">
     <title>Reader</title>
     <style>
@@ -32,19 +31,16 @@
             background-color: #000;
             padding-left: 125px;
             padding-right: 125px;
-
             box-sizing: border-box;
             height: calc(100vh - var(--topbar-h) - var(--footer-h));
-
             margin-top: var(--topbar-h);
             margin-bottom: var(--footer-h);
-
             overflow: hidden;
         }
 
-        .reader span:hover {
-            color: #000;
-            background-color: #cecece;
+        .reader .phrase:hover {
+            background: #2a2a2a;
+            color: #fff;
             cursor: pointer;
         }
 
@@ -60,7 +56,6 @@
         }
 
         .topbar.title {
-            font-family: "Open Sans", sans-serif;
             font-size: 13px;
             font-weight: 600;
             color: #555;
@@ -99,14 +94,12 @@
             color: #fff;
         }
 
-        /* medidor invisível: terá o mesmo estilo que .reader */
         #measurer {
             position: absolute;
             visibility: hidden;
             left: -9999px;
             top: -9999px;
             width: 994px;
-            /* will update dynamically to match reader's content width */
             padding: 40px 125px;
             box-sizing: border-box;
             font-size: 24px;
@@ -115,33 +108,107 @@
             text-align: justify;
             white-space: normal;
         }
-    </style>
-    <script>
-        const strip = (html) => {
-            let tmp = document.createElement("div");
-            tmp.innerHTML = html;
-            const text = tmp.textContent || tmp.innerText || "";
 
-            return text.replace(/\s+/g, " ").trim();
+        /* Tooltip flutuante simples */
+        .tooltip-float {
+            position: fixed;
+            display: none;
+            z-index: 1000;
+            background: #181818;
+            color: #e6e6e6;
+            border: 1px solid #333;
+            border-radius: 3px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+            min-width: 220px;
+            max-width: 360px;
+            padding: 10px 12px;
+            font-size: 18px;
+            line-height: 1.35;
+        }
+
+        .tooltip-float.show {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="topbar title">A Sea of Darkness</div>
+    </header>
+
+    <div class="reader"></div>
+
+    <div class="footer">
+        <button class="nav-btn">❮</button>
+        <span class="progress">0%</span>
+        <button class="nav-btn">❯</button>
+    </div>
+
+    <!-- medidor invisível -->
+    <div id="measurer" aria-hidden="true"></div>
+
+    <!-- tooltip flutuante -->
+    <div id="tooltip" class="tooltip-float" role="tooltip"></div>
+
+    <script>
+        // ===== 1) SEU CONTEÚDO AGORA EM JSON (frases + tooltip) =====
+        const story = {
+            "page1": [
+                { "phrase": "Maria acordou cedo", "tooltip": "Início do dia" },
+                { "phrase": "O sol já brilhava na janela", "tooltip": "Manhã ensolarada" },
+                { "phrase": "Ela se espreguiçou devagar", "tooltip": "Acordando o corpo" },
+                { "phrase": "Foi até a cozinha", "tooltip": "Primeiro destino" },
+                { "phrase": "Preparou um copo de água", "tooltip": "Hábito saudável" },
+                { "phrase": "Olhou o relógio", "tooltip": "Verificar horário" },
+                { "phrase": "Percebeu que estava com fome", "tooltip": "Sensação matinal" },
+                { "phrase": "Decidiu ir à padaria", "tooltip": "Tomada de decisão" },
+                { "phrase": "Colocou um casaco leve", "tooltip": "Preparando-se para sair" },
+                { "phrase": "Saiu de casa", "tooltip": "Início do trajeto" },
+                { "phrase": "As ruas estavam tranquilas", "tooltip": "Ambiente calmo" },
+                { "phrase": "Cumprimentou a vizinha", "tooltip": "Interação rápida" },
+                { "phrase": "Chegando à padaria", "tooltip": "No local" },
+                { "phrase": "Viu uma pequena fila", "tooltip": "Movimento do lugar" },
+                { "phrase": "Queria comprar pão", "tooltip": "Objetivo principal" },
+                { "phrase": "Notou que os pães haviam acabado", "tooltip": "Decepção" },
+                { "phrase": "Maria suspirou fundo", "tooltip": "Reação emocional" },
+                { "phrase": "Pensou em outras opções", "tooltip": "Reflexão rápida" },
+                { "phrase": "Decidiu comprar café", "tooltip": "Nova escolha" },
+                { "phrase": "Pegou também um pedaço de bolo", "tooltip": "Pequena indulgência" },
+                { "phrase": "Pagou no caixa", "tooltip": "Finalizando a compra" },
+                { "phrase": "Agradeceu ao atendente", "tooltip": "Gentileza" },
+                { "phrase": "Saiu da padaria", "tooltip": "Fim da compra" },
+                { "phrase": "Sentiu o cheiro do café fresco", "tooltip": "Sensação agradável" },
+                { "phrase": "Começou a voltar pra casa", "tooltip": "Retorno" },
+                { "phrase": "Reparou nas flores da calçada", "tooltip": "Detalhes do caminho" },
+                { "phrase": "Ouviu pássaros cantando", "tooltip": "Som ambiente" },
+                { "phrase": "Entrou em casa novamente", "tooltip": "Chegada" },
+                { "phrase": "Preparou a mesa para o café da manhã", "tooltip": "Organização" },
+                { "phrase": "Ficou contente com o início do dia", "tooltip": "Fim feliz" },
+                { "phrase": "Pegou uma xícara bonita do armário", "tooltip": "Escolha cuidadosa" },
+                { "phrase": "Serviu o café fumegante", "tooltip": "Primeiro gole chegando" },
+                { "phrase": "O aroma se espalhou pela cozinha", "tooltip": "Atmosfera aconchegante" },
+                { "phrase": "Cortou um pedaço do bolo", "tooltip": "Preparando o prato" },
+                { "phrase": "Deu a primeira mordida", "tooltip": "Início do café da manhã" },
+                { "phrase": "Sorriu ao sentir o sabor doce", "tooltip": "Pequena felicidade" },
+                { "phrase": "Olhou pela janela", "tooltip": "Momento de contemplação" },
+                { "phrase": "Viu crianças brincando na rua", "tooltip": "Cena cotidiana" },
+                { "phrase": "Lembrou da sua infância", "tooltip": "Recordação" },
+                { "phrase": "Sentiu uma onda de nostalgia", "tooltip": "Emoção suave" },
+                { "phrase": "Terminou seu café lentamente", "tooltip": "Aproveitando o momento" },
+                { "phrase": "Decidiu anotar suas tarefas do dia", "tooltip": "Organização pessoal" },
+                { "phrase": "Pegou papel e caneta", "tooltip": "Preparando-se" },
+                { "phrase": "Escreveu uma pequena lista", "tooltip": "Planejamento" },
+                { "phrase": "Percebeu que o dia seria produtivo", "tooltip": "Perspectiva positiva" }
+            ]
         };
 
-        const book = `<span>I am a lawyer at an engineering company</span>, so I had to pay close attention to every little detail on
-  all those papers. I also had to draft a very important contract that could improve our company's future, which filled me
-  with anxiety. This document could leave no room for interpretation, so writing it was not an easy task. Every
-  word needed to be chosen carefully. If I made a mistake, even a small one, the consequences could be terrible.
-
-  I do not think anyone had lunch that day, just a huge number of cups of coffee. Eventually, people started
-  ordering food. I looked at the clock on the wall: it was past 9 pm, so I ate a salad and some garlic bread at my
-  desk, which helped me to keep going. Everyone was tired, but we pressed on regardless. aaa aaa aaa aaa aaa aaa aaa aaa aaa 
-  aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa bbb aaa aaa aaa aaa aaa aaa aaa aaa 
-  aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa aaa 
-  aaa aaa aaa aaa aaa aaa aaa ccc aaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaa
-  aaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaa
-  aaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaa
-  aaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaa
-  aaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa aaaaaa aaa aaa aaa aaa aaa eee`;
-
         const escapeHtml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const strip = (html) => {
+            const d = document.createElement('div');
+            d.innerHTML = html;
+            return (d.textContent || d.innerText || '').replace(/\s+/g, ' ').trim();
+        };
 
         const syncMeasurerStyle = (readerEl, measurerEl) => {
             const cs = getComputedStyle(readerEl);
@@ -190,65 +257,134 @@
             return best;
         }
 
-        const paginate = (text) => {
+        function buildFullTextWithIndex(items) {
+            let fullText = "";
+            const index = []
+            let pos = 0;
+
+            items.forEach((it, i) => {
+                if (i > 0) {
+                    fullText += " "; pos += 1;
+                }
+
+                const start = pos;
+                fullText += it.phrase;
+                const end = pos + it.phrase.length;
+                index.push({ start, end, tooltip: it.tooltip });
+                pos = end;
+            });
+
+            return { fullText, index };
+        }
+
+        function paginateRanges(fullText) {
             const pages = [];
-            let rest = text;
+            let rest = fullText;
+            let offset = 0;
+
             while (rest.length > 0) {
                 const take = fitPage(rest);
-                if (take <= 0) {
-                    pages.push(rest.slice(0, 100));
-                    rest = rest.slice(100);
-                } else {
-                    pages.push(rest.slice(0, take));
-                    rest = rest.slice(take);
-                }
+                const len = take > 0 ? take : Math.min(100, rest.length); // fallback
+                pages.push({ start: offset, end: offset + len });
+                rest = rest.slice(len);
+                offset += len;
             }
+
             return pages;
         }
 
+        // ===== 4) Constrói HTML de uma página, marcando frases que cruzam o range =====
+        function buildPageHtml(fullText, phraseIndex, range) {
+            // pegue todas as frases que intersectam [range.start, range.end)
+            const overlaps = phraseIndex
+                .filter(({ start, end }) => end > range.start && start < range.end)
+                .sort((a, b) => a.start - b.start);
+
+            let html = "";
+            let cursor = range.start;
+
+            const pushRaw = (from, to) => {
+                if (to > from) html += escapeHtml(fullText.slice(from, to));
+            };
+
+            overlaps.forEach(({ start, end, tooltip }) => {
+                const s = Math.max(start, range.start);
+                const e = Math.min(end, range.end);
+
+                // 1) texto cru antes da frase
+                pushRaw(cursor, s);
+
+                // 2) trecho da frase (pode ser parcial se cortada na página)
+                const frag = fullText.slice(s, e);
+                html += `<span class="phrase" data-tip="${escapeHtml(tooltip)}">${escapeHtml(frag)}</span>`;
+                cursor = e;
+            });
+
+            // 3) cauda depois da última frase
+            pushRaw(cursor, range.end);
+
+            return html;
+        }
+
+        const tipEl = document.getElementById('tooltip');
+        function showTooltip(target, text) {
+            tipEl.textContent = text;
+            const r = target.getBoundingClientRect();
+            const pad = 6;
+            const top = r.bottom + window.scrollY + pad;
+            let left = r.left + window.scrollX;
+
+            tipEl.style.display = 'block'; 
+            const maxLeft = window.scrollX + document.documentElement.clientWidth - tipEl.offsetWidth - 8;
+            if (left > maxLeft) left = maxLeft;
+
+            tipEl.style.top = `${top}px`;
+            tipEl.style.left = `${left}px`;
+            tipEl.classList.add('show');
+        }
+        
+        function hideTooltip() { tipEl.classList.remove('show'); tipEl.style.display = 'none'; }
+
         window.addEventListener("DOMContentLoaded", () => {
-            const txt = strip(book);
-            const pages = paginate(txt);
+            const items = story.page1;                          // <- usa o JSON
+            const { fullText, index: phraseIndex } = buildFullTextWithIndex(items);
+            const pages = paginateRanges(fullText);
 
             let page = 0;
             const reader = document.querySelector(".reader");
             const progress = document.querySelector(".progress");
             const [prevBtn, nextBtn] = document.querySelectorAll(".nav-btn");
 
-            const render = () => {
-                reader.textContent = pages[page];
+            function render() {
+                const range = pages[page];
+                reader.innerHTML = buildPageHtml(fullText, phraseIndex, range);
+
                 progress.textContent = `${Math.round(((page + 1) / pages.length) * 100)}%`;
                 prevBtn.disabled = page === 0;
                 nextBtn.disabled = page === pages.length - 1;
+
+                reader.querySelectorAll('.phrase').forEach(el => {
+                    el.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const tip = el.getAttribute('data-tip');
+                        showTooltip(el, tip || "");
+                    });
+                });
             }
 
-            prevBtn.addEventListener("click", () => {
-                if (page > 0) { page--; render(); }
+
+            prevBtn.addEventListener("click", () => { if (page > 0) { page--; hideTooltip(); render(); } });
+            nextBtn.addEventListener("click", () => { if (page < pages.length - 1) { page++; hideTooltip(); render(); } });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.phrase')) hideTooltip();
             });
 
-            nextBtn.addEventListener("click", () => {
-                if (page < pages.length - 1) { page++; render(); }
-            });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTooltip(); });
 
             render();
         });
     </script>
-</head>
-
-<body>
-    <header class="topbar">
-        <div class="topbar title">A Sea of Darkness</div>
-    </header>
-
-    <div class="reader"></div>
-    <div class="footer">
-        <button class="nav-btn">❮</button>
-        <span class="progress">0%</span>
-        <button class="nav-btn">❯</button>
-    </div>
-
-    <!-- medidor invisível -->
-    <div id="measurer" aria-hidden="true"></div>
 </body>
 
 </html>
