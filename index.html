@@ -207,6 +207,7 @@
     <script>
         const TIP_SAFE = Math.max(64, Math.min(window.innerHeight * 0.10, 128));
         const STORAGE_KEY = "reader:page:v1";
+        const TIP_FOLGA = 50; // px de folga para o tooltip aparecer acima do rodapé
 
         const story = {
             "page1": [
@@ -355,7 +356,7 @@
             return hM <= available + 0.5;
         }
 
-        function fitPage(paragraph, safePx = TIP_SAFE) {
+        function fitPage(paragraph, safePx = TIP_SAFE + TIP_FOLGA) {
             const readerEl = document.querySelector(".reader");
             const measurerEl = document.getElementById("measurer");
             syncMeasurerStyle(readerEl, measurerEl);
