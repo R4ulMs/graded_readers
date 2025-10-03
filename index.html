@@ -7,6 +7,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400&display=swap" rel="stylesheet">
     <style>
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
+
         :root {
             --topbar-h: clamp(32px, 5vh, 44px);
             --footer-h: clamp(44px, 7vh, 64px);
@@ -180,6 +184,10 @@
         .tip-wrap[data-open="true"] .tooltip {
             opacity: 1;
             pointer-events: auto;
+        }
+
+        .reader p {
+            margin: 0 0 0.65em;
         }
     </style>
 </head>
@@ -437,6 +445,21 @@
                     return;
                 }
                 if (!anyWrap) closeAll();
+
+                requestAnimationFrame(() => {
+                    const tip = wrap.querySelector('.tooltip');
+                    if (!tip) return;
+                    const r = tip.getBoundingClientRect();
+                    const pad = 8;
+                    // ajusta horizontal
+                    if (r.right > window.innerWidth - pad) {
+                        tip.style.left = 'auto';
+                        tip.style.right = '0';
+                    } else {
+                        tip.style.left = '0';
+                        tip.style.right = 'auto';
+                    }
+                });
             });
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
         }
