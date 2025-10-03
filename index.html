@@ -45,7 +45,7 @@
 
         .reader {
             width: 100%;
-            max-width: min(994px, calc(var(--col-ch) * 1ch));
+            max-width: min(994px, calc(var(--col-ch)*1ch));
             padding: clamp(20px, 3.5vh, 40px) clamp(16px, 4vw, 48px);
             color: #cfcfcf;
             background: #000;
@@ -130,7 +130,7 @@
 
         .tip-wrap {
             position: relative;
-            /*display: inline-block;*/
+            display: inline-block;
         }
 
         .tip-trigger {
@@ -143,7 +143,7 @@
             top: 100%;
             transform: translateY(8px);
             width: 280px;
-            max-width: 400px;
+            max-width: min(80vw, 400px);
             padding: 8px 10px;
             border: 2px solid #ccc;
             background: #141414;
@@ -187,7 +187,7 @@
         }
 
         .reader p {
-            margin: 0 0 0.65em;
+            margin: 0 0 .65em;
         }
     </style>
 </head>
@@ -196,22 +196,18 @@
     <header class="topbar">
         <div class="topbar title">A Sea of Darkness</div>
     </header>
-
     <div class="reader"></div>
-
     <div class="footer">
         <button class="nav-btn">❮</button>
         <span class="progress">0%</span>
         <button class="nav-btn">❯</button>
     </div>
-
     <div id="measurer" aria-hidden="true"></div>
 
     <script>
         const TIP_SAFE = Math.max(64, Math.min(window.innerHeight * 0.10, 128));
         const STORAGE_KEY = "reader:page:v1";
 
-        // ——— SEU JSON AQUI ———
         const story = {
             "page1": [
                 { "phrase": "Late in the winter", "tooltip": "tarde no inverno" },
@@ -363,10 +359,8 @@
             const readerEl = document.querySelector(".reader");
             const measurerEl = document.getElementById("measurer");
             syncMeasurerStyle(readerEl, measurerEl);
-
             let low = 0, high = paragraph.length, best = 0;
             if (isFitPage(paragraph, readerEl, measurerEl, safePx)) return paragraph.length;
-
             while (low <= high) {
                 const mid = Math.floor((low + high) / 2);
                 const candidate = paragraph.slice(0, mid) + "…";
@@ -397,8 +391,37 @@
             return pages;
         }
 
+        // ---- posiciona tooltip dentro da viewport
+        function placeTooltip(wrap) {
+            const tip = wrap.querySelector('.tooltip');
+            if (!tip) return;
+            // reset base
+            tip.style.left = '0';
+            tip.style.right = 'auto';
+            tip.style.transform = 'translateY(8px)';
+
+            requestAnimationFrame(() => {
+                const vw = window.innerWidth;
+                const pad = 8; // margem mínima
+                const rWrap = wrap.getBoundingClientRect();
+                const rTip = tip.getBoundingClientRect();
+
+                // posição desejada relativa ao wrap (lado esquerdo)
+                let desiredLeftViewport = rWrap.left;              // encostar no wrap
+                // clamp dentro da viewport
+                if (desiredLeftViewport + rTip.width > vw - pad) {
+                    desiredLeftViewport = vw - pad - rTip.width;
+                }
+                if (desiredLeftViewport < pad) {
+                    desiredLeftViewport = pad;
+                }
+                // converte para coordenada relativa ao wrap
+                const leftWithinWrap = desiredLeftViewport - rWrap.left;
+                tip.style.left = leftWithinWrap + 'px';
+            });
+        }
+
         function buildPageHtml(fullText, phraseIndex, range) {
-            // guard: range inválido
             if (!range) return "";
             const overlaps = phraseIndex
                 .filter(({ start, end }) => end > range.start && start < range.end)
@@ -420,7 +443,6 @@
           </span>`;
                 cursor = e;
             });
-
             pushRaw(cursor, range.end);
             return html;
         }
@@ -429,52 +451,40 @@
             const closeAll = () => {
                 document.querySelectorAll('.tip-wrap[data-open="true"]').forEach(w => {
                     w.setAttribute('data-open', 'false');
-                    const t = w.querySelector('.tip-trigger');
-                    if (t) t.setAttribute('aria-expanded', 'false');
+                    const t = w.querySelector('.tip-trigger'); if (t) t.setAttribute('aria-expanded', 'false');
                 });
             };
+
             document.addEventListener('click', (ev) => {
                 const trigger = ev.target.closest('.tip-trigger');
-                const anyWrap = ev.target.closest('.tip-wrap');
-                if (trigger && anyWrap) {
+                const wrap = ev.target.closest('.tip-wrap');
+                if (trigger && wrap) {
                     ev.stopPropagation();
-                    const isOpen = anyWrap.getAttribute('data-open') === 'true';
+                    const isOpen = wrap.getAttribute('data-open') === 'true';
                     closeAll();
-                    anyWrap.setAttribute('data-open', String(!isOpen));
+                    wrap.setAttribute('data-open', String(!isOpen));
                     trigger.setAttribute('aria-expanded', String(!isOpen));
+                    if (!isOpen) { placeTooltip(wrap); } // posiciona ao abrir
                     return;
                 }
-                if (!anyWrap) closeAll();
-
-                requestAnimationFrame(() => {
-                    const tip = wrap.querySelector('.tooltip');
-                    if (!tip) return;
-                    const r = tip.getBoundingClientRect();
-                    const pad = 8;
-                    // ajusta horizontal
-                    if (r.right > window.innerWidth - pad) {
-                        tip.style.left = 'auto';
-                        tip.style.right = '0';
-                    } else {
-                        tip.style.left = '0';
-                        tip.style.right = 'auto';
-                    }
-                });
+                if (!wrap) closeAll();
             });
+
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
+
+            // Reposiciona tooltips abertos no resize/rotação
+            window.addEventListener('resize', () => {
+                document.querySelectorAll('.tip-wrap[data-open="true"]').forEach(placeTooltip);
+            });
         }
 
-        const clampPage = (p, pagesLen) => {
-            if (pagesLen <= 0) return 0;
-            return Math.max(0, Math.min(p, pagesLen - 1));
-        };
+        const clampPage = (p, len) => len <= 0 ? 0 : Math.max(0, Math.min(p, len - 1));
 
         window.addEventListener("DOMContentLoaded", () => {
             const items = story.page1;
             const { fullText, index: phraseIndex } = buildFullTextWithIndex(items);
             let pages = paginateRanges(fullText);
 
-            // restaura página salva
             const saved = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10);
             let page = clampPage(Number.isFinite(saved) ? saved : 0, pages.length);
 
@@ -483,12 +493,9 @@
             const [prevBtn, nextBtn] = document.querySelectorAll(".nav-btn");
 
             const render = () => {
-                // guard se por algum motivo pages ficou vazio
                 if (!pages || pages.length === 0) {
-                    reader.innerHTML = "";
-                    progress.textContent = "0%";
-                    prevBtn.disabled = true; nextBtn.disabled = true;
-                    return;
+                    reader.innerHTML = ""; progress.textContent = "0%";
+                    prevBtn.disabled = nextBtn.disabled = true; return;
                 }
                 page = clampPage(page, pages.length);
                 const range = pages[page];
@@ -496,16 +503,14 @@
                 progress.textContent = `${Math.round(((page + 1) / pages.length) * 100)}%`;
                 prevBtn.disabled = page === 0;
                 nextBtn.disabled = page === pages.length - 1;
-                // salva posição
                 localStorage.setItem(STORAGE_KEY, String(page));
-                // fecha tooltips
                 document.querySelectorAll('.tip-wrap[data-open="true"]').forEach(w => w.setAttribute('data-open', 'false'));
             };
 
             prevBtn.addEventListener("click", () => { if (page > 0) { page--; render(); } });
             nextBtn.addEventListener("click", () => { if (page < pages.length - 1) { page++; render(); } });
 
-            // repagina ao redimensionar/rotacionar
+            // Re-paginar ao redimensionar/rotacionar
             let resizeTimer;
             window.addEventListener('resize', () => {
                 clearTimeout(resizeTimer);
